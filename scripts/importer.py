@@ -30,7 +30,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 PREVIEW_EXTS = {".jpg", ".jpeg"}
 
 # Allowed geometry extensions
-GEOM_EXTS = {".obj", ".fbx", ".gltf", "3ds"}
+GEOM_EXTS = {".obj", ".fbx", ".gltf", ".3ds"}
 
 
 def try_open(path):
@@ -48,7 +48,7 @@ def try_open(path):
 
 def parse_metadata_from_text(text):
     """
-    Parse the metadata from the infor text.
+    Parse the metadata from the info text.
     """
     data = {}
     for raw_line in text.splitlines():
@@ -65,47 +65,25 @@ def parse_metadata_from_text(text):
     return data
 
 
-def parse_date_flexible(date_str):
+def parse_date(date_str):
     """
     Accept multiple date formats:
       - dd.mm.yyyy or d.m.yyyy
       - dd/mm/yyyy
       - dd-mm-yyyy
-      - yyyy-mm-dd
       - month names not supported (keeps simple)
     Returns datetime.date or None.
     """
     if not date_str:
         return None
     date_str = date_str.strip()
-    formats = ["%d.%m.%Y", "%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d"]
+    formats = ["%d.%m.%Y", "%d/%m/%Y", "%d-%m-%Y"]
     for fmt in formats:
         try:
             dt = datetime.strptime(date_str, fmt).date()
             return dt
         except Exception:
             continue
-    # try switching day/month if ambiguous with slashes
-    # try dd/mm/yy or dd.mm.yy too
-    two_digit = ["%d.%m.%y", "%d/%m/%y", "%d-%m-%y"]
-    for fmt in two_digit:
-        try:
-            dt = datetime.strptime(date_str, fmt).date()
-            return dt
-        except Exception:
-            continue
-    # last resort: try to detect numbers and create date manually (very permissive)
-    numbers = re.findall(r"\d{1,4}", date_str)
-    if len(numbers) >= 3:
-        # assume D M Y
-        d, m, y = numbers[0], numbers[1], numbers[2]
-        try:
-            d_i = int(d); m_i = int(m); y_i = int(y)
-            if y_i < 100:  # two-digit year
-                y_i += 2000
-            return datetime(year=y_i, month=m_i, day=d_i).date()
-        except Exception:
-            return None
     return None
 
 
@@ -293,7 +271,7 @@ def process_one_zip(zip_path: Path, final_base_dir: Path, tmp_base: Path):
                 "model_name": target_dir.name,
                 "format": (download_format or Path(geometry_path).suffix.lstrip(".")).upper(),
                 "source_url": download_url,
-                "download_date": parse_date_flexible(date_of_download) if date_of_download else None,
+                "download_date": parse_date(date_of_download) if date_of_download else None,
                 "created_by": created_by,
                 "created_in": created_in,
                 "uploaded_by": uploaded_by,
@@ -373,8 +351,8 @@ def process_all_zips(input_dir: Path, final_base_dir: Path, tmp_base: Path):
 
 
 if __name__ == "__main__":
-    input_dir = Path("input")
-    output_dir = Path("output")
+    input_dir = Path("../data/download")
+    output_dir = Path("../data/models")
     tmp_dir = Path("model_import_tmp") 
 
     process_all_zips(input_dir, output_dir, tmp_dir)

@@ -11,9 +11,9 @@ from contextlib import contextmanager
 
 DB_CONFIG = {
     "host": os.getenv("MODELDB_HOST", "localhost"),
-    "dbname": os.getenv("MODELDB_NAME", "pgr_webapp"),
-    "user": os.getenv("MODELDB_USER", "myuser"),
-    "password": os.getenv("MODELDB_PASSWORD", "o4Wg4Kuh"),
+    "dbname": os.getenv("MODELDB_NAME", "modeldb"),
+    "user": os.getenv("MODELDB_USER", "modeluser"),
+    "password": os.getenv("MODELDB_PASSWORD", "JdJ66u4QX"),
     "port": int(os.getenv("MODELDB_PORT", 5432)),
 }
 
@@ -75,7 +75,7 @@ def init_database():
         with conn:
             with conn.cursor() as cur:
                 cur.execute(schema_sql)
-    print("✅ Database initialized / schema ensured.")
+    print("Database initialized / schema ensured.")
 
 
 def insert_model(model_data: dict) -> int:
@@ -126,3 +126,16 @@ def insert_model(model_data: dict) -> int:
                 ))
                 model_id = cur.fetchone()[0]
                 return model_id
+
+def get_all_models():
+    """Fetch all models with their metadata."""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT model_id, model_name, format, model_description, 
+                       polygon_count, preview_file, average_rating, download_date
+                FROM Model
+                ORDER BY download_date DESC
+            """)
+            columns = [desc[0] for desc in cur.description]
+            return [dict(zip(columns, row)) for row in cur.fetchall()]
